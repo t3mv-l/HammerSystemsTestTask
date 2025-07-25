@@ -36,7 +36,7 @@ class MenuLocalDataSourceImpl: MenuLocalDataSource {
                   description: "Соус Карбонара, Сыр Моцарелла, Сыр Пармезан, Сыр Рокфорти, Сыр Чеддер (тёртый)",
                   price: "от 345 р",
                   category: .pizza
-                 )
+            )
         ]
     }
 }
