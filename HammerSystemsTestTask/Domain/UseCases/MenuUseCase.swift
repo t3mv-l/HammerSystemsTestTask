@@ -10,4 +10,6 @@ import Foundation
 protocol MenuUseCase {
     func fetchPizzas() -> [Pizza]
     func fetchCombos() -> [Combo]
+    func fetchDesserts() async -> [MealItem]
+    func fetchDrinks() async -> [MealItem]
 }

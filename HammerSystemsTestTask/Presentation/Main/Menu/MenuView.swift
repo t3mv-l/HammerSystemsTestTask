@@ -80,12 +80,22 @@ struct MenuView: View {
     private func menuItemRow(_ item: any MenuItem, isFirst: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 24) {
-                Image(item.image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 133, height: 133)
-                    .clipShape(Circle())
-                    .padding(.leading, 16)
+                AsyncImage(url: URL(string: item.image)) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else if phase.error != nil {
+                        Image(item.image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else {
+                        ProgressView()
+                    }
+                }
+                .frame(width: 133, height: 133)
+                .clipShape(Circle())
+                .padding(.leading, 16)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(item.name)
@@ -125,6 +135,11 @@ struct MenuView: View {
             ZStack(alignment: .top) {
                 Color(.systemGray6)
                     .edgesIgnoringSafeArea(.all)
+                
+                if viewModel.isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
     
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -159,7 +174,7 @@ struct MenuView: View {
                         .onChange(of: viewModel.scrollToIndex) { _, index in
                             if let index = index {
                                 withAnimation {
-                                    proxy.scrollTo(index, anchor: .top)
+                                    proxy.scrollTo(index, anchor: .center)
                                 }
                                 DispatchQueue.main.async {
                                     viewModel.scrollToIndex = nil

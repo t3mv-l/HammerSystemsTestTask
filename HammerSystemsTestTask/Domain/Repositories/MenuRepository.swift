@@ -11,3 +11,7 @@ protocol MenuRepository {
     func getAllPizzas() -> [Pizza]
     func getAllCombos() -> [Combo]
 }
+
+protocol MealRepository {
+    func fetchMeals(category: Category) async throws -> [MealItem]
+}

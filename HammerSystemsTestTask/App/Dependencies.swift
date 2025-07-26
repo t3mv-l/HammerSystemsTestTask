@@ -15,6 +15,7 @@ class Dependencies {
     // MARK: - Data Sources
     lazy var authLocalDataSource: AuthLocalDataSource = AuthLocalDataSourceImpl()
     lazy var menuLocalDataSource: MenuLocalDataSource = MenuLocalDataSourceImpl()
+    lazy var mealRepository: MealRepository = MealRepositoryImpl()
     
     // MARK: - Repositories
     lazy var authRepository: AuthRepository = AuthRepositoryImpl(localDataSource: authLocalDataSource)
@@ -22,5 +23,5 @@ class Dependencies {
     
     // MARK: - Use Cases
     lazy var authUseCase: AuthUseCase = AuthInteractor(authRepository: authRepository)
-    lazy var menuUseCase: MenuUseCase = MenuInteractor(menuRepository: menuRepository)
+    lazy var menuUseCase: MenuUseCase = MenuInteractor(menuRepository: menuRepository, mealRepository: mealRepository)
 }
