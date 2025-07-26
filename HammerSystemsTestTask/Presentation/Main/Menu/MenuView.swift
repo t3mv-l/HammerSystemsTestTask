@@ -13,8 +13,11 @@ struct MenuView: View {
     private let categoryBarHeight: CGFloat = 50
     private let cityHeaderHeight: CGFloat = 60
     
-    @ObservedObject var viewModel: MenuViewModel
-    private let categories = Category.allCases
+    @StateObject private var viewModel: MenuViewModel
+    
+    init(menuUseCase: MenuUseCase) {
+        _viewModel = StateObject(wrappedValue: MenuViewModel(menuUseCase: menuUseCase))
+    }
     
     private var cityName: some View {
         HStack {
@@ -51,17 +54,17 @@ struct MenuView: View {
     private var categoryButton: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(Array(categories.enumerated()), id: \.offset) { index, category in
-                    Button(action: { viewModel.selectedCategory = index }) {
+                ForEach(Category.allCases, id: \.self) { category in
+                    Button(action: { viewModel.scrollToCategory(category) }) {
                         Text(category.rawValue)
                             .fontWeight(.medium)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 15)
-                            .background(viewModel.selectedCategory == index ? Color.pink.opacity(0.2) : Color.clear)
-                            .foregroundStyle(viewModel.selectedCategory == index ? .pink : .gray)
+                            .background(viewModel.selectedCategory == category ? Color.pink.opacity(0.2) : Color.clear)
+                            .foregroundStyle(viewModel.selectedCategory == category ? .pink : .gray)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 24)
-                                    .stroke(Color.pink, lineWidth: viewModel.selectedCategory == index ? 0 : 1)
+                                    .stroke(Color.pink, lineWidth: viewModel.selectedCategory == category ? 0 : 1)
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 20))
                             .lineLimit(1)
@@ -74,10 +77,10 @@ struct MenuView: View {
         .background(Color(.systemGray6))
     }
     
-    private func pizzaRow(pizza: Pizza, isFirst: Bool) -> some View {
+    private func menuItemRow(_ item: any MenuItem, isFirst: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 24) {
-                Image(pizza.image)
+                Image(item.image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 133, height: 133)
@@ -85,11 +88,11 @@ struct MenuView: View {
                     .padding(.leading, 16)
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(pizza.name)
+                    Text(item.name)
                         .font(.title3).fontWeight(.semibold)
                         .minimumScaleFactor(0.8)
                     
-                    Text(pizza.description)
+                    Text(item.description)
                         .font(.subheadline)
                         .foregroundStyle(.gray)
                         .fixedSize(horizontal: false, vertical: true)
@@ -98,7 +101,7 @@ struct MenuView: View {
                     
                     HStack {
                         Spacer()
-                        Text(pizza.price)
+                        Text(item.price)
                             .font(.subheadline)
                             .foregroundStyle(.pink)
                             .padding(.vertical, 8)
@@ -123,36 +126,48 @@ struct MenuView: View {
                 Color(.systemGray6)
                     .edgesIgnoringSafeArea(.all)
     
-                ScrollView {
-                    VStack(spacing: 0) {
-                        Color.clear
-                            .frame(height: cityHeaderHeight)
-                        banners
-                        categoryButton
-                            .padding(.bottom)
-                        ForEach(Array(viewModel.pizzas.enumerated()), id: \.element.id) { index, pizza in
-                            pizzaRow(pizza: pizza, isFirst: index == 0)
-                                .listRowInsets(EdgeInsets())
-                                .listRowSeparator(.hidden)
-    
-                            if index < viewModel.pizzas.count - 1 {
-                                Divider()
-                                    .frame(height: 1)
-                                    .listRowInsets(EdgeInsets())
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            Color.clear
+                                .frame(height: cityHeaderHeight)
+                            banners
+                            categoryButton
+                                .padding(.bottom)
+                            
+                            VStack(spacing: 0) {
+                                ForEach(viewModel.menuItems.indices, id: \.self) { index in
+                                    let item = viewModel.menuItems[index]
+                                    menuItemRow(item, isFirst: index == 0)
+                                        .id(index)
+                                    
+                                    if index < viewModel.menuItems.count - 1 {
+                                        Divider()
+                                            .frame(height: 1)
+                                    }
+                                }
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            
+                        }
+                        .background(
+                            GeometryReader { proxy in
+                                Color.clear
+                                    .preference(key: ScrollOffsetKey.self, value: proxy.frame(in: .named("scroll")).minY)
+                            }
+                        )
+                        .onChange(of: viewModel.scrollToIndex) { _, index in
+                            if let index = index {
+                                withAnimation {
+                                    proxy.scrollTo(index, anchor: .top)
+                                }
+                                DispatchQueue.main.async {
+                                    viewModel.scrollToIndex = nil
+                                }
                             }
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     }
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear
-                                .preference(key: ScrollOffsetKey.self, value: proxy.frame(in: .named("scroll")).minY)
-                        }
-                    )
-                }
-                .coordinateSpace(name: "scroll")
-                .onPreferenceChange(ScrollOffsetKey.self) { value in
-                    scrollOffset = value
+                    .coordinateSpace(name: "scroll")
                 }
     
                 VStack(spacing: 0) {
@@ -167,6 +182,9 @@ struct MenuView: View {
                 .offset(y: scrollOffset < 0 ? 0 : -scrollOffset)
                 .zIndex(1)
                 .background(Color(.systemGray6))
+            }
+            .onPreferenceChange(ScrollOffsetKey.self) { value in
+                scrollOffset = value
             }
         }
     }

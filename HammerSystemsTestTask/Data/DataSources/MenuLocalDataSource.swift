@@ -9,4 +9,5 @@ import Foundation
 
 protocol MenuLocalDataSource {
     func fetchPizzas() -> [Pizza]
+    func fetchCombos() -> [Combo]
 }

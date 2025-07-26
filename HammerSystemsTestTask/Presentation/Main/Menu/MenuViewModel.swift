@@ -8,23 +8,25 @@
 import Foundation
 
 class MenuViewModel: ObservableObject {
-    @Published var selectedCategory = 0
-    @Published var offset: CGFloat = 0
-    @Published var headerHeight: CGFloat = 0
-    @Published var pizzas: [Pizza] = []
+    @Published var selectedCategory: Category = .pizza
+    @Published var menuItems: [any MenuItem] = []
+    @Published var scrollToIndex: Int?    
     
     private let menuUseCase: MenuUseCase
     
     init(menuUseCase: MenuUseCase) {
         self.menuUseCase = menuUseCase
-        loadPizzas()
+        loadMenuItems()
     }
     
-    private func loadPizzas() {
-        pizzas = menuUseCase.fetchPizzas()
+    private func loadMenuItems() {
+        let pizzas = menuUseCase.fetchPizzas()
+        let combos = menuUseCase.fetchCombos()
+        menuItems = pizzas + combos
     }
     
-    func pizzas(for category: Category) -> [Pizza] {
-        return pizzas.filter { $0.category == category }
+    func scrollToCategory(_ category: Category) {
+        selectedCategory = category
+        scrollToIndex = menuItems.firstIndex(where: { $0.category == category })
     }
 }

@@ -9,5 +9,5 @@ import Foundation
 
 protocol MenuUseCase {
     func fetchPizzas() -> [Pizza]
-    func fetchPizzas(by category: Category) -> [Pizza]
+    func fetchCombos() -> [Combo]
 }

@@ -18,7 +18,7 @@ class MenuRepositoryImpl: MenuRepository {
         return localDataSource.fetchPizzas()
     }
     
-    func getPizzas(by category: Category) -> [Pizza] {
-        return localDataSource.fetchPizzas().filter { $0.category == category }
+    func getAllCombos() -> [Combo] {
+        return localDataSource.fetchCombos()
     }
 }

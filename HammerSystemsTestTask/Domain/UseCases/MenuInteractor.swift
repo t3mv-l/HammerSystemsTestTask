@@ -17,8 +17,8 @@ class MenuInteractor: MenuUseCase {
     func fetchPizzas() -> [Pizza] {
         return menuRepository.getAllPizzas()
     }
-        
-    func fetchPizzas(by category: Category) -> [Pizza] {
-        return menuRepository.getPizzas(by: category)
-    }
+    
+    func fetchCombos() -> [Combo] {
+        return menuRepository.getAllCombos()
+    }    
 }

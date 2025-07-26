@@ -12,7 +12,7 @@ struct MainView: View {
     
     var body: some View {
         TabView(selection: $viewModel.selectedTab) {
-            MenuView(viewModel: MenuViewModel(menuUseCase: viewModel.menuUseCase))
+            MenuView(menuUseCase: viewModel.menuUseCase)
                 .tabItem { Image("Menu") }
                 .tag(0)
             

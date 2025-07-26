@@ -9,5 +9,5 @@ import Foundation
 
 protocol MenuRepository {
     func getAllPizzas() -> [Pizza]
-    func getPizzas(by category: Category) -> [Pizza]
+    func getAllCombos() -> [Combo]
 }
