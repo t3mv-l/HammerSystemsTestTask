@@ -8,25 +8,70 @@
 import SwiftUI
 
 struct MenuView: View {
+    @State private var scrollOffset: CGFloat = 0
+    private let bannerHeight: CGFloat = 125
+    private let categoryBarHeight: CGFloat = 50
+    private let cityHeaderHeight: CGFloat = 60
+    
     @ObservedObject var viewModel: MenuViewModel
     private let categories = Category.allCases
     
-    private var pizzaList: some View {
-        List {
-            ForEach(Array(viewModel.pizzas.enumerated()), id: \.element.id) { index, pizza in
-                pizzaRow(pizza: pizza, isFirst: index == 0)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
+    private var cityName: some View {
+        HStack {
+            Text("Москва")
+                .font(.title2).fontWeight(.medium)
+            Image(systemName: "chevron.down")
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.top, 16)
+    }
+    
+    private var banners: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 20) {
+                Image("Banner")
+                    .resizable()
+                    .aspectRatio(2.5, contentMode: .fit)
+                    .frame(height: bannerHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 
-                if index < viewModel.pizzas.count - 1 {
-                    Divider()
-                        .frame(height: 1)
-                        .listRowInsets(EdgeInsets())
+                Image("Banner2")
+                    .resizable()
+                    .aspectRatio(2.5, contentMode: .fit)
+                    .frame(height: bannerHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            .padding(.horizontal)
+            .padding(.top, 16)
+        }
+        .padding(.bottom, 16)
+    }
+    
+    private var categoryButton: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(Array(categories.enumerated()), id: \.offset) { index, category in
+                    Button(action: { viewModel.selectedCategory = index }) {
+                        Text(category.rawValue)
+                            .fontWeight(.medium)
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 15)
+                            .background(viewModel.selectedCategory == index ? Color.pink.opacity(0.2) : Color.clear)
+                            .foregroundStyle(viewModel.selectedCategory == index ? .pink : .gray)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .stroke(Color.pink, lineWidth: viewModel.selectedCategory == index ? 0 : 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .lineLimit(1)
+                    }
                 }
             }
+            .padding(.horizontal)
+            .frame(height: categoryBarHeight)
         }
-        .listStyle(.plain)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(Color(.systemGray6))
     }
     
     private func pizzaRow(pizza: Pizza, isFirst: Bool) -> some View {
@@ -66,72 +111,70 @@ struct MenuView: View {
                     .padding(.trailing, 20)
                 }
             }
-            .padding(.top, isFirst ? 16 : 0)
+            .padding(.top, 16)
             .padding(.bottom)
             .background(Color.white)
         }
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            VStack {
-                HStack {
-                    Text("Москва")
-                        .font(.title2).fontWeight(.medium)
-                    Image(systemName: "chevron.down")
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.top, 16)
-                
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 20) {
-                        Image("Banner")
-                            .resizable()
-                            .aspectRatio(2.5, contentMode: .fit)
-                            .frame(height: 125)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                        
-                        Image("Banner2")
-                            .resizable()
-                            .aspectRatio(2.5, contentMode: .fit)
-                            .frame(height: 125)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 16)
-                }
-                .padding(.bottom, 16)
-            }
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(Array(categories.enumerated()), id: \.offset) { index, category in
-                        Button(action: { viewModel.selectedCategory = index }) {
-                            Text(category.rawValue)
-                                .fontWeight(.medium)
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 15)
-                                .background(viewModel.selectedCategory == index ? Color.pink.opacity(0.2) : Color.clear)
-                                .foregroundStyle(viewModel.selectedCategory == index ? .pink : .gray)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 24)
-                                        .stroke(Color.pink, lineWidth: viewModel.selectedCategory == index ? 0 : 1)
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 20))
-                                .lineLimit(1)
+        GeometryReader { geometry in
+            ZStack(alignment: .top) {
+                Color(.systemGray6)
+                    .edgesIgnoringSafeArea(.all)
+    
+                ScrollView {
+                    VStack(spacing: 0) {
+                        Color.clear
+                            .frame(height: cityHeaderHeight)
+                        banners
+                        categoryButton
+                            .padding(.bottom)
+                        ForEach(Array(viewModel.pizzas.enumerated()), id: \.element.id) { index, pizza in
+                            pizzaRow(pizza: pizza, isFirst: index == 0)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
+    
+                            if index < viewModel.pizzas.count - 1 {
+                                Divider()
+                                    .frame(height: 1)
+                                    .listRowInsets(EdgeInsets())
+                            }
                         }
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    }
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear
+                                .preference(key: ScrollOffsetKey.self, value: proxy.frame(in: .named("scroll")).minY)
+                        }
+                    )
+                }
+                .coordinateSpace(name: "scroll")
+                .onPreferenceChange(ScrollOffsetKey.self) { value in
+                    scrollOffset = value
+                }
+    
+                VStack(spacing: 0) {
+                    cityName
+                        .padding(.bottom)
+    
+                    if scrollOffset < -bannerHeight * 1.3 {
+                        categoryButton
+                            .padding(.bottom)
                     }
                 }
-                .padding(.horizontal)
-                .frame(height: 48)
+                .offset(y: scrollOffset < 0 ? 0 : -scrollOffset)
+                .zIndex(1)
+                .background(Color(.systemGray6))
             }
-            .background(Color(.systemGray6))
-            
-            Spacer().frame(height: 24)
-            
-            pizzaList
         }
-        .background(Color(.systemGray6))
+    }
+}
+    
+struct ScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value += nextValue()
     }
 }
